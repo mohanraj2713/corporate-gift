@@ -45,7 +45,7 @@ export default function AdminPage() {
   const tabs = [
     { id: 'products', name: 'Products', icon: Package, count: products.length },
     { id: 'categories', name: 'Categories', icon: Tag, count: categories.length },
-    { id: 'customers', name: 'Customers', icon: Building2, count: customers.length },
+    { id: 'customers', name: 'Users', icon: Building2, count: customers.length },
     { id: 'campaigns', name: 'Campaigns', icon: Gift, count: campaigns.length },
     { id: 'orders', name: 'Orders', icon: ShoppingBag, count: orders.length },
     { id: 'recipients', name: 'Recipients', icon: Users, count: recipients.length },
@@ -57,7 +57,7 @@ export default function AdminPage() {
   useEffect(() => {
     fetch('/api/products').then(res => res.json()).then(data => { if (data && data.length > 0) setProducts(data); }).catch(console.error);
     fetch('/api/categories').then(res => res.json()).then(data => { if (data && data.length > 0) setCategories(data); }).catch(console.error);
-    fetch('/api/customers').then(res => res.json()).then(data => { if (data && Array.isArray(data)) setCustomers(data); }).catch(console.error);
+    fetch('/api/users').then(res => res.json()).then(data => { if (data && Array.isArray(data)) setCustomers(data); }).catch(console.error);
     fetch('/api/campaigns').then(res => res.json()).then(data => { if (data && Array.isArray(data)) setCampaigns(data); }).catch(console.error);
     fetch('/api/orders').then(res => res.json()).then(data => { if (data && Array.isArray(data)) setOrders(data); }).catch(console.error);
     fetch('/api/recipients').then(res => res.json()).then(data => { if (data && Array.isArray(data)) setRecipients(data); }).catch(console.error);
@@ -65,6 +65,36 @@ export default function AdminPage() {
     fetch('/api/inventory').then(res => res.json()).then(data => { if (data && Array.isArray(data)) setInventory(data); }).catch(console.error);
     fetch('/api/delivery').then(res => res.json()).then(data => { if (data && Array.isArray(data)) setDelivery(data); }).catch(console.error);
   }, []);
+
+  const handleApproveUser = async (userId: string, role: string) => {
+    try {
+      const res = await fetch('/api/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, isApproved: true, role })
+      });
+      if (res.ok) {
+        setCustomers(customers.map((c: any) => c._id === userId ? { ...c, isApproved: true } : c));
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleRoleChange = async (userId: string, role: string, isApproved: boolean) => {
+    try {
+      const res = await fetch('/api/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, isApproved, role })
+      });
+      if (res.ok) {
+        setCustomers(customers.map((c: any) => c._id === userId ? { ...c, role } : c));
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -276,46 +306,67 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Customers Table */}
+        {/* Users Table */}
         {activeTab === 'customers' && (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-700">
               <thead className="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider border-b border-slate-200">
                 <tr>
-                  <th className="px-6 py-3.5">Company Account</th>
-                  <th className="px-6 py-3.5">Admin Email</th>
-                  <th className="px-6 py-3.5">Team Seats</th>
-                  <th className="px-6 py-3.5">Total Spend</th>
-                  <th className="px-6 py-3.5">Plan Tier</th>
+                  <th className="px-6 py-3.5">User Name</th>
+                  <th className="px-6 py-3.5">Email</th>
+                  <th className="px-6 py-3.5">Company</th>
+                  <th className="px-6 py-3.5">Role</th>
+                  <th className="px-6 py-3.5">Status</th>
                   <th className="px-6 py-3.5 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 bg-white">
                 {customers.map((c) => (
-                  <tr key={c.id} className="hover:bg-slate-50/80 transition-colors">
+                  <tr key={c._id || c.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="px-6 py-4 font-bold text-slate-900">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-slate-900 text-white font-black text-xs flex items-center justify-center">
-                          {c.name.slice(0, 2).toUpperCase()}
+                          {c.name ? c.name.slice(0, 2).toUpperCase() : 'US'}
                         </div>
                         <div>
                           <p className="font-bold text-slate-900">{c.name}</p>
-                          <p className="text-[10px] text-emerald-600 font-bold">{c.status}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-slate-600 font-medium">{c.email}</td>
-                    <td className="px-6 py-4 font-bold text-slate-800">{c.userCount} seats</td>
-                    <td className="px-6 py-4 font-extrabold text-slate-900">{c.spending}</td>
+                    <td className="px-6 py-4 font-bold text-slate-800">{c.companyName || (c.company ? c.company.name : 'N/A')}</td>
                     <td className="px-6 py-4">
-                      <span className="bg-slate-100 text-slate-800 font-bold px-2.5 py-0.5 rounded text-[11px] border border-slate-200">
-                        {c.plan}
-                      </span>
+                      <select 
+                        value={c.role || 'user'}
+                        onChange={(e) => handleRoleChange(c._id, e.target.value, c.isApproved)}
+                        className="bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs font-bold text-slate-700 outline-none focus:ring-1 focus:ring-slate-400"
+                      >
+                        <option value="user">User</option>
+                        <option value="manager">Manager</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </td>
+                    <td className="px-6 py-4">
+                      {c.isApproved ? (
+                        <span className="bg-emerald-100 text-emerald-800 font-bold px-2.5 py-0.5 rounded text-[11px] border border-emerald-200">
+                          Approved
+                        </span>
+                      ) : (
+                        <span className="bg-amber-100 text-amber-800 font-bold px-2.5 py-0.5 rounded text-[11px] border border-amber-200">
+                          Pending
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <Button variant="outline" size="sm" className="rounded-lg text-[11px] font-bold border-slate-200 h-7">
-                        Manage Account
-                      </Button>
+                      {!c.isApproved ? (
+                        <Button onClick={() => handleApproveUser(c._id, c.role || 'user')} variant="outline" size="sm" className="rounded-lg text-[11px] font-bold border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 hover:text-emerald-800 h-7">
+                          Approve
+                        </Button>
+                      ) : (
+                        <Button variant="outline" size="sm" className="rounded-lg text-[11px] font-bold border-slate-200 h-7 text-slate-400 cursor-not-allowed">
+                          Approved
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 ))}

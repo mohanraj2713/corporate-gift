@@ -63,9 +63,9 @@ export default function ProductsPage() {
 
   const handleSignIn = async () => {
     setSignInError('');
-    const success = await signIn(email, password);
-    if (!success) {
-      setSignInError('Invalid credentials');
+    const result: any = await signIn(email, password);
+    if (!result.success) {
+      setSignInError(result.message || 'Invalid credentials');
       return;
     }
     

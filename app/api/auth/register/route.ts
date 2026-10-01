@@ -55,7 +55,8 @@ export async function POST(request: NextRequest) {
       email,
       password: hashedPassword,
       company: company._id,
-      role: 'admin',
+      companyName: company.name,
+      role: 'user',
     });
 
     return NextResponse.json(
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { message: 'Registration failed. Please try again.' },
+      { message: 'Registration failed: ' + (error.message || 'Unknown error') },
       { status: 500 }
     );
   }

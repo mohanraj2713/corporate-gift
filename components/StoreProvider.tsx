@@ -52,7 +52,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ email, password })
       });
       const data = await res.json();
-      if (res.ok && data.success) {
+      if (res.ok && data.user) {
         setIsSignedIn(true);
         setUser(data.user);
         localStorage.setItem('printo_user', JSON.stringify(data.user));
@@ -68,10 +68,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         fetch(`/api/cart?userId=${data.user._id}`).then(r => r.json()).then(d => setCart(d.items || []));
         fetch(`/api/recently-viewed?userId=${data.user._id}`).then(r => r.json()).then(d => setRecentlyViewed(d.items || []));
       } else {
-        setSignInError('Invalid credentials');
+        setSignInError(data.message || 'Invalid credentials');
       }
-    } catch(e) {
-      setSignInError('Invalid credentials');
+    } catch(e: any) {
+      setSignInError(e.message || 'Invalid credentials');
     }
   };
 
@@ -143,11 +143,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         fetch(`/api/recently-viewed?userId=${data.user._id}`)
           .then(r => r.json())
           .then(d => setRecentlyViewed(d.items || []));
-        return true;
+        return { success: true };
       }
-      return false;
-    } catch(e) {
-      return false;
+      const data = await res.json();
+      return { success: false, message: data.message || 'Invalid credentials' };
+    } catch(e: any) {
+      return { success: false, message: e.message || 'Invalid credentials' };
     }
   };
 

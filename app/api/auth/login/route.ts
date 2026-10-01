@@ -30,6 +30,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!user.isApproved) {
+      return NextResponse.json(
+        { message: 'Your account is pending approval by an admin.' },
+        { status: 403 }
+      );
+    }
+
     // Check password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {

@@ -5,7 +5,9 @@ export interface IUser extends Document {
   email: string;
   password: string;
   company: Schema.Types.ObjectId;
-  role: 'admin' | 'manager';
+  companyName?: string;
+  role: 'admin' | 'manager' | 'user';
+  isApproved: boolean;
   createdAt: Date;
 }
 
@@ -14,9 +16,13 @@ const UserSchema = new Schema<IUser>({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   company: { type: Schema.Types.ObjectId, ref: 'Company', required: true },
-  role: { type: String, enum: ['admin', 'manager'], default: 'manager' },
+  companyName: { type: String },
+  role: { type: String, enum: ['admin', 'manager', 'user'], default: 'user' },
+  isApproved: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
 });
 
+// Clear mongoose model cache for Next.js hot reloading
+delete models.User;
 const User = models.User || model<IUser>('User', UserSchema);
 export default User;
