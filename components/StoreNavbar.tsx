@@ -11,7 +11,7 @@ interface StoreNavbarProps {
 }
 
 export default function StoreNavbar({ onSignInClick }: StoreNavbarProps) {
-  const { isSignedIn, signOut, wishlist, cart } = useStore();
+  const { isSignedIn, signOut, wishlist, cart, user } = useStore();
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -108,10 +108,10 @@ export default function StoreNavbar({ onSignInClick }: StoreNavbarProps) {
                 {isSignedIn ? (
                   <div className="flex items-center gap-3 pl-2 border-l border-slate-200/80">
                     <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/80 rounded-full py-1 pl-1.5 pr-3">
-                      <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-slate-800 to-teal-800 text-white text-[10px] font-bold flex items-center justify-center shadow-sm">
-                        US
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-slate-800 to-teal-800 text-white text-[10px] font-bold flex items-center justify-center shadow-sm uppercase">
+                        {user?.name ? user.name.substring(0, 2) : 'US'}
                       </div>
-                      <span className="text-xs font-bold text-slate-700">User</span>
+                      <span className="text-xs font-bold text-slate-700">{user?.name || 'User'}</span>
                     </div>
                     <button 
                       onClick={() => signOut()}
@@ -213,10 +213,10 @@ export default function StoreNavbar({ onSignInClick }: StoreNavbarProps) {
               {isSignedIn ? (
                 <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-200">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold">
-                      US
+                    <div className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold uppercase">
+                      {user?.name ? user.name.substring(0, 2) : 'US'}
                     </div>
-                    <div className="font-bold text-slate-800">User</div>
+                    <div className="font-bold text-slate-800">{user?.name || 'User'}</div>
                   </div>
                   <button 
                     onClick={() => {

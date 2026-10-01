@@ -5,7 +5,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 type StoreContextType = {
   isSignedIn: boolean;
   user: any;
-  signIn: (email: string, password: string) => Promise<boolean>;
+  signIn: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
   signOut: () => void;
   wishlist: string[];
   toggleWishlist: (id: string) => void;
@@ -14,7 +14,7 @@ type StoreContextType = {
   clearCart: () => void;
   recentlyViewed: string[];
   addRecentlyViewed: (id: string) => void;
-  requireSignIn: (action: () => void) => void;
+  requireSignIn: (action: (u?: any) => void) => void;
 };
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -29,14 +29,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   
   // Global Sign In Modal State
   const [showSignInModal, setShowSignInModal] = useState(false);
-  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+  const [pendingAction, setPendingAction] = useState<((u?: any) => void) | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [signInError, setSignInError] = useState('');
 
-  const requireSignIn = (action: () => void) => {
-    if (isSignedIn) {
-      action();
+  const requireSignIn = (action: (u?: any) => void) => {
+    if (isSignedIn && user) {
+      action(user);
     } else {
       setPendingAction(() => action);
       setShowSignInModal(true);
@@ -59,7 +59,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         
         setShowSignInModal(false);
         if (pendingAction) {
-          pendingAction();
+          setTimeout(() => pendingAction(data.user), 10);
           setPendingAction(null);
         }
         
@@ -193,19 +193,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   const toggleCart = (id: string) => {
-    requireSignIn(() => {
+    requireSignIn((activeUser) => {
       const isAdding = !cart.includes(id);
-    setCart(prev => 
-      isAdding ? [...prev, id] : prev.filter(item => item !== id)
-    );
+      setCart(prev => 
+        isAdding ? [...prev, id] : prev.filter(item => item !== id)
+      );
 
-    if (isSignedIn && user) {
-      fetch('/api/cart', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user._id, itemId: id, action: isAdding ? 'add' : 'remove' })
-      }).catch(console.error);
-    }
+      const u = activeUser || user;
+      if (u) {
+        fetch('/api/cart', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: u._id, itemId: id, action: isAdding ? 'add' : 'remove' })
+        }).catch(console.error);
+      }
     });
   };
 
