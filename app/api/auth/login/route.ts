@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
     const bcrypt = (await import('bcryptjs')).default;
     const { connectDB } = await import('@/lib/mongodb');
     const User = (await import('@/models/User')).default;
+    const Company = (await import('@/models/Company')).default; // Ensure Company model is registered
     const { signToken } = await import('@/lib/jwt');
 
     // Connect to database
@@ -38,6 +39,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Check password
+    if (!user.password) {
+      return NextResponse.json(
+        { message: 'Invalid email or password' },
+        { status: 401 }
+      );
+    }
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return NextResponse.json(
@@ -69,10 +76,10 @@ export async function POST(request: NextRequest) {
     });
 
     return response;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Login error:', error);
     return NextResponse.json(
-      { message: 'Login failed. Please try again.' },
+      { message: process.env.NODE_ENV === 'development' ? `Error: ${error.message}` : 'Login failed. Please try again.' },
       { status: 500 }
     );
   }
